@@ -41,10 +41,10 @@ echo
 echo "Installing command..."
 if [ ! -w "$BIN_DIR" ]; then
     echo -e "${YELLOW}Installing to $BIN_DIR requires sudo${NC}"
-    sudo cp "$INSTALL_DIR/badapple.py" "$BIN_DIR/badapple"
+    sudo cp "$INSTALL_DIR/src/badapple.py" "$BIN_DIR/badapple"
     sudo chmod +x "$BIN_DIR/badapple"
 else
-    cp "$INSTALL_DIR/badapple.py" "$BIN_DIR/badapple"
+    cp "$INSTALL_DIR/src/badapple.py" "$BIN_DIR/badapple"
     chmod +x "$BIN_DIR/badapple"
 fi
 echo
