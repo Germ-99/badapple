@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
 import os
 import subprocess
 import sys
@@ -40,15 +39,27 @@ def check_dependencies():
         sys.exit(1)
 
 
-def extract_frames(width, height, fps, force=False):
-    if FRAMES_DIR.exists() and not force:
+def get_terminal_size():
+    try:
+        cols = int(subprocess.check_output(['tput', 'cols']).decode().strip())
+        lines = int(subprocess.check_output(['tput', 'lines']).decode().strip())
+        width = cols
+        height = lines * 2
+        return width, height
+    except:
+        return 80, 48
+
+
+def extract_frames(width, height, fps):
+    cache_key = f"{width}x{height}_{fps}fps"
+    marker_file = FRAMES_DIR / f".cache_{cache_key}"
+    
+    if marker_file.exists():
         frame_count = len(list(FRAMES_DIR.glob('frame_*.png')))
         if frame_count > 0:
-            print(f"Using {frame_count} cached frames")
             return frame_count
     
-    print("Rendering frames...")
-    print(f"Settings: {width}x{height} @ {fps}fps")
+    print("Rendering frames for your terminal size...")
     
     if FRAMES_DIR.exists():
         shutil.rmtree(FRAMES_DIR)
@@ -67,18 +78,17 @@ def extract_frames(width, height, fps, force=False):
     try:
         subprocess.run(cmd, check=True)
         frame_count = len(list(FRAMES_DIR.glob('frame_*.png')))
-        print(f"Extracted {frame_count} frames")
+        marker_file.touch()
         return frame_count
     except subprocess.CalledProcessError:
         print("Frame extraction failed!", file=sys.stderr)
         sys.exit(1)
 
 
-def extract_audio(force=False):
-    if AUDIO_FILE.exists() and not force:
+def extract_audio():
+    if AUDIO_FILE.exists():
         return
     
-    print("Extracting audio...")
     cmd = [
         'ffmpeg',
         '-i', str(VIDEO_FILE),
@@ -91,12 +101,11 @@ def extract_audio(force=False):
     
     try:
         subprocess.run(cmd, check=True)
-        print("Audio extracted")
     except subprocess.CalledProcessError:
-        print("Audio extraction failed (continuing without audio)", file=sys.stderr)
+        pass
 
 
-def play_animation(width, height, fps, play_audio, chafa_args):
+def play_animation(width, height, fps):
     frames = sorted(FRAMES_DIR.glob('frame_*.png'))
     frame_count = len(frames)
     
@@ -104,16 +113,12 @@ def play_animation(width, height, fps, play_audio, chafa_args):
         print("Error: No frames found!", file=sys.stderr)
         sys.exit(1)
     
-    print(f"Ready: {frame_count} frames")
-    print("Press Ctrl+C to stop")
-    print()
-    
     audio_process = None
     
     try:
         print('\033[?25l', end='')
         
-        if play_audio and AUDIO_FILE.exists():
+        if AUDIO_FILE.exists():
             audio_process = subprocess.Popen(
                 ['ffplay', '-nodisp', '-autoexit', str(AUDIO_FILE), '-loglevel', 'quiet'],
                 stdout=subprocess.DEVNULL,
@@ -133,8 +138,12 @@ def play_animation(width, height, fps, play_audio, chafa_args):
                     'chafa',
                     '--format', 'symbols',
                     '--size', f'{width}x{height}',
+                    '--symbols', 'ascii',
+                    '--colors', '2',
                     '--animate', 'off',
-                ] + chafa_args.split() + [str(frame_file)]
+                    '--fg-only',
+                    str(frame_file)
+                ]
                 
                 try:
                     output = subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL)
@@ -166,16 +175,13 @@ def play_animation(width, height, fps, play_audio, chafa_args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Bad Apple!! ASCII Player')
-    
-    parser.add_argument('-w', '--width', type=int, default=80)
-    parser.add_argument('--height', type=int, default=40, dest='height')
-    parser.add_argument('-f', '--fps', type=int, default=30)
-    parser.add_argument('--no-audio', action='store_true')
-    parser.add_argument('--force-render', action='store_true')
-    parser.add_argument('--chafa-args', type=str, default='--symbols ascii --fg-only')
-    
-    args = parser.parse_args()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '-h' or sys.argv[1] == '--help':
+            print("This software is written by Bryson Kelly, source code can be found at https://github.com/Germ-99/badapple")
+            sys.exit(0)
+        else:
+            print('pssst! This command doesn\'t have any arguments, it\'s only purpose is to play bad apple. Simply just type "badapple" in your terminal or run "badapple -h" to find the source code!')
+            sys.exit(1)
     
     check_dependencies()
     
@@ -185,13 +191,13 @@ def main():
         print("  curl -fsSL https://raw.githubusercontent.com/Germ-99/badapple/main/src/download.sh | bash", file=sys.stderr)
         sys.exit(1)
     
-    extract_frames(args.width, args.height, args.fps, force=args.force_render)
+    width, height = get_terminal_size()
+    fps = 30
     
-    if not args.no_audio:
-        extract_audio(force=args.force_render)
+    extract_frames(width, height, fps)
+    extract_audio()
     
-    print()
-    play_animation(args.width, args.height, args.fps, not args.no_audio, args.chafa_args)
+    play_animation(width, height, fps)
 
 
 if __name__ == '__main__':
