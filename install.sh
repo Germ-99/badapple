@@ -55,7 +55,4 @@ echo -e "${GREEN} Installation complete!${NC}"
 echo
 echo "Run 'badapple' to play Bad Apple"
 echo
-echo "Options:"
-echo "  badapple -w 120 --height 60    # Higher resolution"
-echo "  badapple -f 24                 # Different framerate"
-echo "  badapple --no-audio            # Without audio"
+echo "There are no options, run badapple -h for info"
