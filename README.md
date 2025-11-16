@@ -7,17 +7,18 @@ First, please make sure you have the following dependencies:
 - ffmpeg
 - chafa
 - curl
+- yt-dlp
 
 **If you need the commands to download those**
 ```bash
 # Debian/Ubuntu
-sudo apt install git ffmpeg chafa curl
+sudo apt install git ffmpeg chafa curl yt-dlp
 
 # Arch 
-sudo pacman -S git ffmpeg chafa curl
+sudo pacman -S git ffmpeg chafa curl yt-dlp
 
 # Fedora
-sudo dnf install git ffmpeg chafa curl
+sudo dnf install git ffmpeg chafa curl yt-dlp
 ```
 
 ## After you have dependencies
